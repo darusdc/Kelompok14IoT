@@ -52,6 +52,8 @@ void connect_ke_Broker()
       Serial.println("Broker Tersambung");
       mqttClient.subscribe("kelompok4/smarthome/limitLux");
       mqttClient.subscribe("kelompok4/smarthome/limitTemperature");
+      mqttClient.subscribe("kelompok4/smarthome/switchFan");
+      mqttClient.subscribe("kelompok4/smarthome/switchLamp");
     }
   }
 }
@@ -75,6 +77,22 @@ void callback(char* topic, byte* message, unsigned int length)
   if(String(topic) == "kelompok4/smarthome/limitTemperature"){
     if (messageTemp.toInt()!=0){
       limitTemperature = messageTemp.toFloat();
+    }
+  }
+
+  if(String(topic) == "kelompok4/smarthome/switchLamp"){
+    if (messageTemp == "on"){
+      digitalWrite(switch_lampu,HIGH);
+    } else {
+        digitalWrite(switch_lampu, LOW);
+    }
+  }
+
+  if(String(topic) == "kelompok4/smarthome/switchFan"){
+    if (messageTemp == "on"){
+      digitalWrite(switch_kipas,HIGH);
+    } else {
+        digitalWrite(switch_kipas, LOW);
     }
   }
 }
