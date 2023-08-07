@@ -1,6 +1,6 @@
 <h1 align="left">Hi IoT Enthusiast <img src="https://github.com/agungnursatria/agungnursatria/blob/main/img/Hi.gif" height="32" /></h1>
 
-## We're from Group 14 IoT Batch 14 Edspert.id
+## We're from Group 4 IoT Batch 14 Edspert.id
 
 ### Our team is:
 - Ryan Pairera
