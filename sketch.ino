@@ -19,12 +19,15 @@
 char *MQTT_Server = "broker.hivemq.com";;
 int  MQTT_Port = 1883;
 
-LiquidCrystal_I2C lcd(0x27,16,2);
+LiquidCrystal_I2C lcd(0x27,20,4);
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
 const float gama = 0.7;
 const float cons_rl = 50;
+
+bool switchFan = false;
+bool switchLamp = false;
 
 DHT dht_1(DHT_PIN, DHT_TYPE);
 
@@ -32,11 +35,6 @@ DHT dht_1(DHT_PIN, DHT_TYPE);
 float limitLux = 200;
 float limitTemperature = 32;
 
-void Initial_Setup_MQTT()
-{
-  mqttClient.setServer(MQTT_Server, MQTT_Port);
-  mqttClient.setCallback(callback);
-}
 
 void connect_ke_Broker()
 {
@@ -79,20 +77,18 @@ void callback(char* topic, byte* message, unsigned int length)
       limitTemperature = messageTemp.toFloat();
     }
   }
-
-  if(String(topic) == "kelompok4/smarthome/switchLamp"){
-    if (messageTemp == "on"){
-      digitalWrite(switch_lampu,HIGH);
-    } else {
-        digitalWrite(switch_lampu, LOW);
-    }
-  }
-
   if(String(topic) == "kelompok4/smarthome/switchFan"){
     if (messageTemp == "on"){
-      digitalWrite(switch_kipas,HIGH);
+      switchFan = true;
     } else {
-        digitalWrite(switch_kipas, LOW);
+      switchFan = false;
+    }
+  }
+  if(String(topic) == "kelompok4/smarthome/switchLamp"){
+    if (messageTemp == "on"){
+      switchLamp = true;
+    } else {
+      switchLamp = false;
     }
   }
 }
@@ -117,30 +113,36 @@ void setup()
   delay(2000);
 
   cek_Internet();
-  Initial_Setup_MQTT();
+  mqttClient.setServer(MQTT_Server, MQTT_Port);
+  mqttClient.setCallback(callback);
 
   
 
   pinMode(ldrPin, INPUT);
   dht_1.begin();
+  
   lcd.init();
+  lcd.backlight();
+  lcd.clear();
 
   pinMode(switch_kipas, OUTPUT);
   digitalWrite(switch_kipas, LOW);
 
+  pinMode(switch_lampu, OUTPUT);
+  digitalWrite(switch_lampu, LOW);
+
 }
 
-void loop()
-{
-
+void loop() {
 
   while(!mqttClient.connected())
   {
     connect_ke_Broker();   // Try to connect with broker
   }
 
-  //else
-  //{
+  mqttClient.loop();
+
+
     int analog = analogRead(ldrPin);
 
     Serial.print("Nilai Analog: ");
@@ -173,31 +175,39 @@ void loop()
     
     char string_data_hum[8];
     dtostrf(hum, 1, 2, string_data_hum);  //Convert float to String
-    Serial.print("Temperature: ");
+    Serial.print("hum: ");
     Serial.println(string_data_hum);
     mqttClient.publish("kelompok4/smarthome/humidity", string_data_hum);
-  //}
 
-  lcd.backlight();
+
+ 
   lcd.setCursor(0,0);
-  lcd.print("T:");
-  lcd.setCursor(2,0);
+  lcd.print("T : ");
+  lcd.setCursor(4,0);
   lcd.print(temp);
 
-  lcd.backlight();
-  lcd.setCursor(8,0);
-  lcd.print("Lx:");
-  lcd.setCursor(11,0);
+
+  
+  lcd.setCursor(10,0);
+  lcd.print("H : ");
+  lcd.setCursor(14,0);
+  lcd.print(hum);
+
+  
+  lcd.setCursor(0,1);
+  lcd.print("Lx : ");
+  lcd.setCursor(5,1);
   lcd.print(nilai_lux);
 
   // Control Temperature dan Lux
-  if (nilai_lux <= limitLux) {
+  if ((nilai_lux <= limitLux) || (switchLamp)) {
     digitalWrite(switch_lampu, HIGH);
   } else {
     digitalWrite(switch_lampu, LOW);
   }
-
-  if (temp >= limitTemperature) {
+  Serial.print("Fan:");
+  Serial.println(switchFan);
+  if ((temp >= limitTemperature)|| (switchFan)) {
     digitalWrite(switch_kipas, HIGH);
   } else {
     digitalWrite(switch_kipas, LOW);
